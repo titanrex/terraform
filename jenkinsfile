@@ -1,11 +1,8 @@
 pipeline {
     agent any
     
-    environment {
-        GITHUB_TOKEN = credentials('github-token-id')
-        REPO_OWNER = 'titanrex'
-        REPO_NAME = 'terraform'
-        NEW_FOLDER_NAME = "${params.NEW_FOLDER_NAME}" // Usamos el valor del parámetro ingresado en Jenkins
+    parameters {
+        string(name: 'NEW_FOLDER_NAME', description: 'Nombre de la nueva carpeta en GitHub', defaultValue: '')
     }
 
     stages {
@@ -13,14 +10,17 @@ pipeline {
             steps {
                 script {
                     def createFolderResponse = sh(script: """
-                        curl -X PUT -H "Authorization: token ${GITHUB_TOKEN}" -d '{
-                            "path": "${NEW_FOLDER_NAME}",
-                            "message": "Create ${NEW_FOLDER_NAME}",
-                            "branch": "main"
-                        }' https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${NEW_FOLDER_NAME}
+                        git config --global user.email "jenkins@example.com"
+                        git config --global user.name "Jenkins"
+                        git clone https://github.com/titanrex/terraform.git
+                        cd terraform
+                        mkdir ${params.NEW_FOLDER_NAME}
+                        git add ${params.NEW_FOLDER_NAME}
+                        git commit -m "Create ${params.NEW_FOLDER_NAME}"
+                        git push origin main
                     """, returnStdout: true).trim()
 
-                    echo "Folder created: ${NEW_FOLDER_NAME}"
+                    echo "Folder created: ${params.NEW_FOLDER_NAME}"
                 }
             }
         }
