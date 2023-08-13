@@ -1,0 +1,52 @@
+pipeline {
+    agent any
+    
+    environment {
+        GOOGLE_APPLICATION_CREDENTIALS = credentials('terraform-gcp-json-id')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Clonar el repositorio de código fuente desde GitHub
+                git url: 'https://github.com/titanrex/terraform.git'
+            }
+        }
+        
+        stage('Terraform Init') {
+            steps {
+                // Inicializar Terraform
+                sh 'terraform init'
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                // Ejecutar un plan de Terraform
+                withCredentials([file(credentialsId: 'terraform-gcp-json-id', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                    sh 'export GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS} && terraform plan'
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                // Aplicar la configuración de Terraform con credenciales seguras
+                withCredentials([file(credentialsId: 'terraform-gcp-json-id', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                    sh 'export GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS} && terraform apply -auto-approve'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Destruir la infraestructura en caso de fallo
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                withCredentials([file(credentialsId: 'terraform-gcp-json-id', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                    sh 'export GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS} && terraform destroy -auto-approve'
+                }
+            }
+        }
+    }
+}
