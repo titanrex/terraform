@@ -5,7 +5,7 @@ pipeline {
         GITHUB_TOKEN = credentials('github-token-id')
         REPO_OWNER = 'titanrex'
         REPO_NAME = 'terraform'
-        NEW_FOLDER_NAME = "${params.NEW_FOLDER_NAME}" // Usamos el parámetro definido en Jenkins
+        NEW_FOLDER_NAME = "${params.NEW_FOLDER_NAME}" // Usamos el valor del parámetro ingresado en Jenkins
     }
 
     stages {
